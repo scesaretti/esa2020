@@ -1,0 +1,133 @@
+\documentclass[a4paper,twoside,11pt]{article}
+%\usepackage[italian]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+%\usepackage{graphicx}
+%\usepackage{epsfig}
+%\usepackage[T1]{fontenc}
+\usepackage{listings}
+\renewcommand{\lstlistingname}{Listing}
+
+\title{Efficent embedded linux system with Build Root}
+
+%%\subtitle{ESA course project}
+
+\author{Sauro Cesaretti}
+
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+The idea of this project is born with the needs to have an efficient way to build an embedded system from scratch, customizable according to the features of the device and with the possibility to include an external package.
+
+The answer is in build root.
+In this report we'll try to understand the basic capabilities offered.
+We'll show two different uses of this tool, one based on qemu (virtual machine) and another based on a real hardware device.
+
+ 
+\section{What is build root}
+Build root is a tool that makes easy to create a linux embedded system from scratch using cross compilation, using simple and efficient tools from a linux command line.
+
+It is able to generate all the components of an OS:
+\begin{itemize}
+\item Root file system;
+\item Linux kernel image;
+\item boot loader;
+\end{itemize}
+
+It also gives support for several processors and different variants.
+The tool is totally based on linux system and it only needs the most common developing tools to compile (GCC, binutils...), usually available in build-essentials in most debian based system.
+ 
+The process to generate the ready-to-use image of the OS can be summarized in the following steps:
+\begin{itemize}
+\item clone / get+unpack buildroot;
+\item Customize your buildroot istance, using make menuconfig and eventually additional configuration files;
+\item run make; 
+\end{itemize}
+This would show the simplicity and the power of buildroot at the same time.
+
+\section{Basic Configuration}
+The first thing to do to work with build root is to create a configuration file according to your specific hardware and needs.
+There exists a configuration tool that is similar to that one that we use in linux kernel configuration, with also graphical and text based interfaces.
+It generates a configuration file .config that will be read during the compiling process.
+In particular, the tool will help to specify the target platform, the additional packages that we woould like to include and several parameters that custiomizes the compilation process.
+As said in the previous paragraph, first we need to download the package from buildroot website or either we can clone the repository.
+In our example we are going to clone the repository  of buildroot as follow:
+
+git clone git://git.buildroot.net/buildroot
+
+The command to start the configuration process is: 
+make menuconfig.
+This tools is based in keyconfig, that has the task to reads all the features available to build our OS.
+The keyconfig reads all the config.in files contained in each package available.
+The folders of the pcackages contain the config.in file and the package.mk, the .mk file contains the instruction to compile the package for buildroot.
+Keyconfig builds the tree of the configuration menu (menuconfig) so that we are able to select all the features that we would include.
+It can also allow to change things like hostname, init system, root password, in System configuration or select a specific kernel in Kernel section.
+
+\section{The Compiling Process}
+In the previous chapter we escribed the menuconfig tool, this one saves all the options that we would like to select for our build root in a file called .config.
+This file will be read by the top-level Makefile.
+
+After that we generated the .config file, we could also customize the kernel compiling options with make linux-menuconfig.
+Even if it is not our case, I prefer to specify also this option.
+ 
+Now we are ready to start the compiling process simply with make command.
+
+The make command will generally perform the following steps, as described in the official manual of build root:
+
+\begin{itemize}
+\item Download source files (as required);
+\item Configure, build and install the cross-compilation toolchain, or simply import an external toolchain;
+\item Configure, build and install selected target packages;
+\item Build a kernel image, if selected;
+\item Build a bootloader image, if selected;
+\item Create a root filesystem in selected formats.
+\end{itemize}
+As said above, the compilation toolchain that comes with your system runs on and generates code for the processor in your host system. As your embedded system has a different processor, you need a cross-compilation toolchain - a compilation toolchain that runs on your host system but generates code for your target system (and target processor). For example, if your host system uses x86 and your target system uses ARM, the regular compilation toolchain on your host runs on x86 and generates code for x86, while the cross-compilation toolchain runs on x86 and generates code for ARM.
+
+Buildroot provides two solutions for the cross-compilation toolchain:
+\begin{itemize}
+\item The internal toolchain backend, called Buildroot toolchain in the configuration interface.
+\item The external toolchain backend, called External toolchain in the configuration interface.
+\end{itemize}
+
+
+\section{Compiling for qemu}
+In most of the cases that we would like to compile buildroot, we have defconfig files that make life easier.
+Those files exist for real world and virtual devices.
+n our first example we are going to compile the buildroot for qemu virtual machine.
+Def\_config files are invoked before that we are going to start the menuconfig tool, so that the configuration is almost ready for our specific real or virtual platform.
+In this first example we have to invoke the def:config for qemu, as said.
+we simply run the command:
+make qemu\_a\rm\_versatile\_defconfig
+and then, we are ready to start the menu\_config to customize our distribution parameters, like host name or root password.
+After that, we can run the make command and at the end we'll have our .img file ready.
+
+\section{Compiling for real devices}
+Buildroot is an extremely growing tol that is able to support almost every board known in the market.
+In /board folder we can find the instruction to compile and run buildroot for all the devices supported.
+In particular, we have to consider the readme file that indicates the specific defconfig file to invoke.
+
+\section{Customizing and adding packages to buildroot}
+you can place project-specific customizations in two locations:
+
+directly within the Buildroot tree, typically maintaining them using branches in a version control system so that upgrading to a newer Buildroot release is easy.
+outside of the Buildroot tree, using the br2-external mechanism. 
+This mechanism allows to keep package recipes, board support and configuration files outside of the Buildroot tree, while still having them nicely integrated in the build logic. 
+We call this location a br2-external tree. 
+As described in the official manual, a br2-external tree must contain at least those three files:
+
+\begin{itemize}
+\item external.desc
+\item external.mk
+\item Config.in
+\end{itemize}
+If we would like to integrate packages,
+we have to consider two scenarios, some packages only contain a kernel module, other packages contain programs and libraries in addition to kernel modules. 
+Buildroot's helper infrastructure supports both cases.
+In our case we intended to inlcude as an example to describe the customization, a package developed by Angelo Compagnucci, friend ans school collegue.
+The purpose of this package is to provide a software implementation of pwm.
+
+\end{document}
